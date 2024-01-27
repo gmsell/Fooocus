@@ -475,7 +475,71 @@ def worker():
             height = H * 8
             print(f'Final resolution is {str((height, width))}.')
 
-        if 'upscale' in goals:
+        if uov_method == flags.upscale_32:
+            for iteration in range(5):
+                H, W, C = uov_input_image.shape
+                progressbar(async_task, 13, f'Upscaling image from {str((H, W))} ...')
+                uov_input_image = perform_upscale(uov_input_image)
+                print(f'Image upscaled {str(iteration)} times.')
+
+            if '1.5x' in uov_method:
+                f = 1.5
+            elif '2x' in uov_method:
+                f = 2.0
+            else:
+                f = 1.0
+
+            shape_ceil = get_shape_ceil(H * f, W * f)
+
+            if shape_ceil < 1024:
+                print(f'[Upscale] Image is resized because it is too small.')
+                uov_input_image = set_image_shape_ceil(uov_input_image, 1024)
+                shape_ceil = 1024
+            else:
+                uov_input_image = resample_image(uov_input_image, width=W * f, height=H * f)
+
+            image_is_super_large = shape_ceil > 2800
+
+            if 'fast' in uov_method:
+                direct_return = True
+            elif image_is_super_large:
+                print('Image is too large. Directly returned the SR image. '
+                      'Usually directly return SR image at 4K resolution '
+                      'yields better results than SDXL diffusion.')
+                direct_return = True
+            else:
+                direct_return = False
+
+            if direct_return:
+                d = [('Upscale (Fast)', '2x')]
+                log(uov_input_image, d)
+                yield_result(async_task, uov_input_image, do_not_show_finished_images=True)
+                return
+
+            tiled = True
+            denoising_strength = 0.382
+
+            if advanced_parameters.overwrite_upscale_strength > 0:
+                denoising_strength = advanced_parameters.overwrite_upscale_strength
+
+            initial_pixels = core.numpy_to_pytorch(uov_input_image)
+            progressbar(async_task, 13, 'VAE encoding ...')
+
+            candidate_vae, _ = pipeline.get_candidate_vae(
+                steps=steps,
+                switch=switch,
+                denoise=denoising_strength,
+                refiner_swap_method=refiner_swap_method
+            )
+
+            initial_latent = core.encode_vae(
+                vae=candidate_vae,
+                pixels=initial_pixels, tiled=True)
+            B, C, H, W = initial_latent['samples'].shape
+            width = W * 8
+            height = H * 8
+            print(f'Final resolution is {str((height, width))}.')
+        elif 'upscale' in goals:
             H, W, C = uov_input_image.shape
             progressbar(async_task, 13, f'Upscaling image from {str((H, W))} ...')
             uov_input_image = perform_upscale(uov_input_image)
