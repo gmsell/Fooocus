@@ -5,9 +5,10 @@ strong_variation = 'Vary (Strong)'
 upscale_15 = 'Upscale (1.5x)'
 upscale_2 = 'Upscale (2x)'
 upscale_fast = 'Upscale (Fast 2x)'
+upscale_32 = 'Upscale (32x)'
 
 uov_list = [
-    disabled, subtle_variation, strong_variation, upscale_15, upscale_2, upscale_fast
+    disabled, subtle_variation, strong_variation, upscale_15, upscale_2, upscale_fast, upscale_32
 ]
 
 KSAMPLER_NAMES = ["euler", "euler_ancestral", "heun", "heunpp2","dpm_2", "dpm_2_ancestral",
