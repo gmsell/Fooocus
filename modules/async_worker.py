@@ -475,12 +475,12 @@ def worker():
             height = H * 8
             print(f'Final resolution is {str((height, width))}.')
 
-        if uov_method == flags.upscale_32:
-            for iteration in range(5):
+        if 'upscale (32x)' in uov_method:
+            for iteration in range(4):
                 H, W, C = uov_input_image.shape
                 progressbar(async_task, 13, f'Upscaling image from {str((H, W))} ...')
                 uov_input_image = perform_upscale(uov_input_image)
-                print(f'Image upscaled {str(iteration)} times.')
+                print(f'Image upscaled {str(iteration + 1)} times.')
 
             if '1.5x' in uov_method:
                 f = 1.5
@@ -502,11 +502,13 @@ def worker():
 
             if 'fast' in uov_method:
                 direct_return = True
+            elif iteration == 3:
+                direct_return = True
             elif image_is_super_large:
                 print('Image is too large. Directly returned the SR image. '
                       'Usually directly return SR image at 4K resolution '
                       'yields better results than SDXL diffusion.')
-                direct_return = True
+                #direct_return = True
             else:
                 direct_return = False
 
